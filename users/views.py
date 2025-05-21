@@ -1,4 +1,5 @@
-import requests, os
+import os
+import requests
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.shortcuts import redirect
@@ -19,32 +20,55 @@ def auth_init(request):
     )
     return Response({"redirect": url})
 
+
 @api_view(['GET'])
 def auth_callback(request):
     code = request.GET.get("code")
     state = request.GET.get("state", "/")
+
     token_url = "https://meta.wikimedia.org/w/rest.php/oauth2/access_token"
     user_url = "https://meta.wikimedia.org/w/rest.php/oauth2/resource/profile"
 
-    # Exchange code for token
-    r = requests.post(token_url, data={
+    # Step 1: Exchange code for access token
+    token_response = requests.post(token_url, data={
         "client_id": settings.WIKI_CLIENT_ID,
         "client_secret": settings.WIKI_CLIENT_SECRET,
         "code": code,
         "grant_type": "authorization_code",
         "redirect_uri": settings.WIKI_REDIRECT_URI,
     })
-    access_token = r.json().get("access_token")
 
-    # Fetch user profile
-    r = requests.get(user_url, headers={"Authorization": f"Bearer {access_token}"})
-    profile = r.json()
-    wiki_id = profile["sub"]
+    if token_response.status_code != 200:
+        return Response({"detail": "Failed to exchange token"}, status=400)
 
-    user, _ = User.objects.get_or_create(wiki_id=wiki_id, defaults={
-        "username": profile["preferred_username"],
-        "first_name": profile.get("name", ""),
-    })
+    access_token = token_response.json().get("access_token")
+    if not access_token:
+        return Response({"detail": "Access token not received"}, status=400)
 
-    # Return frontend a redirect with user info (or set cookie instead)
+    # Step 2: Fetch user profile
+    profile_response = requests.get(user_url, headers={"Authorization": f"Bearer {access_token}"})
+    if profile_response.status_code != 200:
+        return Response({"detail": "Failed to fetch user profile"}, status=400)
+
+    profile = profile_response.json()
+    print("Wikimedia Profile:", profile)  # Optional: remove in production
+
+    # Use fallback keys to avoid crash
+    wiki_id = profile.get("sub")
+    username = profile.get("preferred_username") or profile.get("username") or wiki_id
+    real_name = profile.get("name", "")
+
+    if not wiki_id or not username:
+        return Response({"detail": "Missing user ID or username"}, status=400)
+
+    # Step 3: Create or retrieve user
+    user, _ = User.objects.get_or_create(
+        wiki_id=wiki_id,
+        defaults={
+            "username": username,
+            "first_name": real_name,
+        }
+    )
+
+    # Step 4: Redirect to frontend with user name (optional: set token later)
     return redirect(f"https://wikiclub.in/dashboard?name={user.first_name}")

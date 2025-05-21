@@ -109,6 +109,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'users.CustomUser'
 
 # OAuth2 Wikimedia config
-WIKI_CLIENT_ID = '1b6fb8608c661324acac04a79dbefb4a'
-WIKI_CLIENT_SECRET = 'da6045c6f3a504e8998ebe35777b21961e9b82a4'
-WIKI_REDIRECT_URI = 'https://wikiclub.in/api/auth/callback'
+WIKI_CLIENT_ID = os.environ.get("WIKI_CLIENT_ID")
+WIKI_CLIENT_SECRET = os.environ.get("WIKI_CLIENT_SECRET")
+WIKI_REDIRECT_URI = os.environ.get("WIKI_REDIRECT_URI")

@@ -38,6 +38,9 @@ def auth_callback(request):
         "redirect_uri": settings.WIKI_REDIRECT_URI,
     })
 
+    if settings.DEBUG:
+        print("Token Response:", token_response.status_code, token_response.text)
+
     if token_response.status_code != 200:
         return Response({"detail": "Failed to exchange token"}, status=400)
 
@@ -51,9 +54,10 @@ def auth_callback(request):
         return Response({"detail": "Failed to fetch user profile"}, status=400)
 
     profile = profile_response.json()
-    print("Wikimedia Profile:", profile)  # Optional: remove in production
+    if settings.DEBUG:
+        print("Wikimedia Profile:", profile)
 
-    # Use fallback keys to avoid crash
+    # Fallback to avoid missing keys
     wiki_id = profile.get("sub")
     username = profile.get("preferred_username") or profile.get("username") or wiki_id
     real_name = profile.get("name", "")
@@ -70,5 +74,5 @@ def auth_callback(request):
         }
     )
 
-    # Step 4: Redirect to frontend with user name (optional: set token later)
-    return redirect(f"https://wikiclub.in/dashboard?name={user.first_name}")
+    # Step 4: Redirect to frontend with user name (for now)
+    return redirect(f"https://wikiclub.in/dashboard?name={user.first_name or user.username}")

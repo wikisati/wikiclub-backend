@@ -76,7 +76,7 @@ def auth_callback(request):
     user.save()
 
     response = redirect(f"https://wikiclub.in/dashboard?name={user.first_name or user.username}")
-    response.set_cookie("wikiclub_token", access_token, httponly=True, samesite="Lax")
+    response.set_cookie("wikiclub_token", access_token, httponly=True, samesite="None", secure=True)
     return response
 
 

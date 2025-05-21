@@ -16,17 +16,15 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-
     'rest_framework',
     'corsheaders',
-
     'users',
-    'whitenoise.runserver_nostatic',  # ✅ Needed for static on Render
+    'whitenoise.runserver_nostatic',  # ✅ Static support
 ]
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',  # ✅ Enable static file middleware early
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # ✅ Static middleware
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -34,12 +32,10 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'users.middleware.auth.TokenAuthMiddleware',  # ✅ Custom token middleware
 ]
 
-CORS_ALLOWED_ORIGINS = [
-    "https://wikiclub.in",
-]
-
+CORS_ALLOWED_ORIGINS = ["https://wikiclub.in"]
 CORS_ALLOW_CREDENTIALS = True
 
 ROOT_URLCONF = 'wikiclub.urls'
@@ -83,12 +79,11 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  # ✅ Needed for collectstatic
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'users.CustomUser'
 
-# OAuth2 Wikimedia config (environment-safe)
 WIKI_CLIENT_ID = os.environ.get("WIKI_CLIENT_ID")
 WIKI_CLIENT_SECRET = os.environ.get("WIKI_CLIENT_SECRET")
 WIKI_REDIRECT_URI = os.environ.get("WIKI_REDIRECT_URI")
